@@ -19,7 +19,7 @@ VALUES
   (3, 'Mohamed', 'Daoud', 'mohamed@gmail.com', '$2b$10$CKmWJVt37k0uOfOShorOsOW081S/tNurTmvT3LylJ1guIPtETlJi2', NOW(), NOW()),
   (4, 'Justin', 'Ami', 'justin@gmail.com', '$2b$10$2dFrGp//fDUdPrDXkNf33Oe0TdEOVh41ZF5mF2kBLEq7wS5s2zSte', NOW(), NOW()),
   (5, 'Aliou', 'Diallo', 'Aliou@gmail.com', '$2b$10$Nan7EDorK27IkwwS2QNvBOgLMOtHv9/wTn88bLNPpLO2SAKHGNYY6', NOW(), NOW()),
-  (6, 'Admin', 'System', 'admin@admin.com', '$2b$10$ghwlr5.AoyahOt7aGVz7K.Dwqc6eGmFsO6W4fYr0l/NDKgJS9x1em', NOW(), NOW());
+  (6, 'Admin', 'System', 'admin@admin.com', '$2b$10$oVRcIOvMP9qCkpp9tCS3JegOjK5m4Dqn/QvQaqkLKUeR9NuTTCn7i', NOW(), NOW());
 
 INSERT INTO member_profiles (id, address, phone, membershipNumber, joinedAt, userId, createdAt, updatedAt)
 VALUES
