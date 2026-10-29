@@ -359,7 +359,7 @@ Réponse JSON 201 → React met à jour l'affichage
 | **MEMBER** (adhérent / étudiant) | S'inscrire seul, consulter le catalogue, **réserver**, annuler ses réservations, voir **ses** prêts, **renouveler** ses prêts |
 | **ADMIN** (bibliothécaire) | Tout le reste : livres, auteurs, catégories, membres, **enregistrer les prêts et retours** au comptoir, voir tous les prêts et réservations |
 
-Toutes les routes exigent un jeton JWT, sauf `GET /health`, `POST /auth/login` et `POST /auth/register`. L'inscription crée toujours un compte `MEMBER` : le rôle `ADMIN` ne peut être donné que par un bibliothécaire. Les mots de passe sont chiffrés (bcrypt) et jamais renvoyés par l'API. Un adhérent ne voit jamais les prêts des autres.
+Toutes les routes exigent un jeton JWT, sauf `GET /health`, `POST /auth/login` et `POST /auth/register`. L'inscription crée toujours un compte `MEMBER` : le rôle `ADMIN` ne peut être donné que par un bibliothécaire. Pour réserver l'inscription aux étudiants de l'école, renseignez `ALLOWED_EMAIL_DOMAIN` (ex : `ALLOWED_EMAIL_DOMAIN=etu.univ-lyon1.fr`, plusieurs domaines séparés par des virgules) dans un fichier `.env` à la racine, puis `docker compose up -d`. Vide = inscription libre. Les mots de passe sont chiffrés (bcrypt) et jamais renvoyés par l'API. Un adhérent ne voit jamais les prêts des autres.
 
 ### Règles de prêt (modifiables dans `src/circulation/circulation.rules.ts`)
 
