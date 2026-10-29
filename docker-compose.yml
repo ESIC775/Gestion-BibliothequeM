@@ -41,8 +41,8 @@ services:
       DB_PASSWORD: Youssouf2000
       DB_SYNC: "true"
       JWT_SECRET: ${JWT_SECRET:-secret_key_2026}
-      # Inscription réservée à ces domaines d'email (ex : etu.univ-lyon1.fr). Vide = inscription libre.
-      ALLOWED_EMAIL_DOMAIN: ${ALLOWED_EMAIL_DOMAIN:-}
+      # Inscription réservée aux emails étudiants de l'université. Pour changer : variable ALLOWED_EMAIL_DOMAIN (.env). Vide (ALLOWED_EMAIL_DOMAIN=) = inscription libre.
+      ALLOWED_EMAIL_DOMAIN: ${ALLOWED_EMAIL_DOMAIN-edu.univ-paris13.fr}
     ports:
       - "3000:3000"
     healthcheck:
