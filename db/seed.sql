@@ -623,17 +623,17 @@ VALUES
   -- Yanis emprunte "Vingt mille lieues sous les mers"
   (2, NOW(), ADDDATE(NOW(), 7), NULL, 'BORROWED', 0, 2, 2, NOW(), NOW()),
   -- Justin et Aliou ont pris les 2 exemplaires de "I Want Your Revenge" (plus aucun disponible)
-  (3, DATE_SUB(NOW(), INTERVAL 4 DAY), ADDDATE(NOW(), 10), NULL, 'BORROWED', 0, 4, 7, NOW(), NOW()),
-  (4, DATE_SUB(NOW(), INTERVAL 9 DAY), ADDDATE(NOW(), 5), NULL, 'BORROWED', 1, 5, 7, NOW(), NOW()),
+  (3, ADDDATE(NOW(), -4), ADDDATE(NOW(), 10), NULL, 'BORROWED', 0, 4, 7, NOW(), NOW()),
+  (4, ADDDATE(NOW(), -9), ADDDATE(NOW(), 5), NULL, 'BORROWED', 1, 5, 7, NOW(), NOW()),
   -- Mohamed a déjà rendu "Kings of Sin" (historique)
-  (5, DATE_SUB(NOW(), INTERVAL 20 DAY), DATE_SUB(NOW(), INTERVAL 6 DAY), DATE_SUB(NOW(), INTERVAL 8 DAY), 'RETURNED', 0, 3, 4, NOW(), NOW()),
+  (5, ADDDATE(NOW(), -20), ADDDATE(NOW(), -6), ADDDATE(NOW(), -8), 'RETURNED', 0, 3, 4, NOW(), NOW()),
   -- Yanis a "Just Romance" EN RETARD (exemple d'amende : 0,20 € par jour, ici environ 0,80 €)
-  (6, DATE_SUB(NOW(), INTERVAL 17 DAY), DATE_SUB(NOW(), INTERVAL 3 DAY), NULL, 'BORROWED', 0, 2, 5, NOW(), NOW());
+  (6, ADDDATE(NOW(), -17), ADDDATE(NOW(), -3), NULL, 'BORROWED', 0, 2, 5, NOW(), NOW());
 
 -- Réservations de démonstration
 -- PENDING = file d'attente (plus d'exemplaire libre) ; READY = exemplaire mis de côté au comptoir.
 INSERT INTO reservations (id, reservedAt, status, expiresAt, userId, bookId, createdAt, updatedAt)
 VALUES
-  (1, DATE_SUB(NOW(), INTERVAL 2 DAY), 'PENDING', NULL, 3, 7, NOW(), NOW()),
-  (2, DATE_SUB(NOW(), INTERVAL 1 DAY), 'PENDING', NULL, 1, 7, NOW(), NOW()),
+  (1, ADDDATE(NOW(), -2), 'PENDING', NULL, 3, 7, NOW(), NOW()),
+  (2, ADDDATE(NOW(), -1), 'PENDING', NULL, 1, 7, NOW(), NOW()),
   (3, NOW(), 'READY', ADDDATE(NOW(), 3), 1, 3, NOW(), NOW());
