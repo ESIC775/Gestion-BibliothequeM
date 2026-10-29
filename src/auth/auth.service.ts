@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/sequelize';
 import * as bcrypt from 'bcrypt';
@@ -32,6 +32,7 @@ export class AuthService {
   /** Inscription libre d'un étudiant : toujours créé avec le rôle MEMBER. */
   async register(dto: RegisterDto) {
     const email = dto.email.trim();
+    this.assertEmailDomainAllowed(email);
     const existing = await this.userModel.findOne({ where: { email } });
     if (existing) {
       throw new ConflictException('Un compte existe déjà avec cet email.');
@@ -52,6 +53,27 @@ export class AuthService {
     });
 
     return this.buildSession(user);
+  }
+
+  /**
+   * Si ALLOWED_EMAIL_DOMAIN est défini (ex : "etu.univ-lyon1.fr" ou "univ.fr,etu.univ.fr"),
+   * seules les adresses de ces domaines (et de leurs sous-domaines) peuvent s'inscrire.
+   * Vide = inscription libre. Ne concerne que l'inscription : les comptes créés par un bibliothécaire sont libres.
+   */
+  private assertEmailDomainAllowed(email: string) {
+    const allowed = (process.env.ALLOWED_EMAIL_DOMAIN ?? '')
+      .split(',')
+      .map((d) => d.trim().toLowerCase().replace(/^@/, ''))
+      .filter(Boolean);
+    if (allowed.length === 0) return;
+
+    const domain = email.split('@').pop()?.toLowerCase() ?? '';
+    const ok = allowed.some((d) => domain === d || domain.endsWith(`.${d}`));
+    if (!ok) {
+      throw new BadRequestException(
+        `L'inscription est réservée aux adresses ${allowed.map((d) => `@${d}`).join(' ou ')}.`,
+      );
+    }
   }
 
   async me(userId: number) {

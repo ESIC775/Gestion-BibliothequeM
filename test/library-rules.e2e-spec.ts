@@ -76,6 +76,42 @@ describe('Règles de la bibliothèque (e2e)', () => {
         .expect(400);
     });
 
+    it("l'inscription peut être limitée au domaine d'email de l'école", async () => {
+      process.env.ALLOWED_EMAIL_DOMAIN = 'etu.ecole.fr, ecole.fr';
+      try {
+        const refused = await request(ctx.http())
+          .post('/auth/register')
+          .send({ firstName: 'Ext', lastName: 'Erne', email: 'ext@gmail.com', password: 'abcdef' })
+          .expect(400);
+        expect(refused.body.message).toContain('@etu.ecole.fr');
+        // faux domaine qui se termine pareil : refusé
+        await request(ctx.http())
+          .post('/auth/register')
+          .send({ firstName: 'Ext', lastName: 'Erne', email: 'x@fauxecole.fr', password: 'abcdef' })
+          .expect(400);
+        await request(ctx.http())
+          .post('/auth/register')
+          .send({ firstName: 'Léa', lastName: 'Etu', email: 'Lea@ETU.ECOLE.FR', password: 'abcdef' })
+          .expect(201);
+        // sous-domaine accepté
+        await request(ctx.http())
+          .post('/auth/register')
+          .send({ firstName: 'Max', lastName: 'Sub', email: 'max@info.ecole.fr', password: 'abcdef' })
+          .expect(201);
+        // un bibliothécaire peut toujours créer un compte hors domaine
+        await admin
+          .post('/users')
+          .send({ firstName: 'Inv', lastName: 'Ite', email: 'invite@gmail.com', password: 'abcdef', address: 'a', phone: '1' })
+          .expect(201);
+      } finally {
+        delete process.env.ALLOWED_EMAIL_DOMAIN;
+      }
+      await request(ctx.http())
+        .post('/auth/register')
+        .send({ firstName: 'Libre', lastName: 'Ok', email: 'libre@gmail.com', password: 'abcdef' })
+        .expect(201); // sans restriction : libre à nouveau
+    });
+
     it('login : mauvais mot de passe refusé, bon mot de passe accepté, /auth/me', async () => {
       await request(ctx.http()).post('/auth/login').send({ email: 'sarah@test.fr', password: 'mauvais-mot-de-passe' }).expect(401);
       const ok = await request(ctx.http())

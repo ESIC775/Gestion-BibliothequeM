@@ -41,6 +41,8 @@ services:
       DB_PASSWORD: Youssouf2000
       DB_SYNC: "true"
       JWT_SECRET: ${JWT_SECRET:-secret_key_2026}
+      # Inscription réservée à ces domaines d'email (ex : etu.univ-lyon1.fr). Vide = inscription libre.
+      ALLOWED_EMAIL_DOMAIN: ${ALLOWED_EMAIL_DOMAIN:-}
     ports:
       - "3000:3000"
     healthcheck:
