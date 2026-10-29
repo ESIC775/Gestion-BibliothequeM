@@ -17,7 +17,7 @@ VALUES
   (1, 'Amina', 'Bensaid', 'amina@example.com', '$2b$10$bayzXtFz1yXioAok53cKSuHICNEmYw3ePTSXp/7JCisjMur9TeY8e', NOW(), NOW()),
   (2, 'Yanis', 'Dupont', 'yanis@example.com', '$2b$10$bayzXtFz1yXioAok53cKSuHICNEmYw3ePTSXp/7JCisjMur9TeY8e', NOW(), NOW()),
   (3, 'Mohamed', 'Daoud', 'mohamed@gmail.com', '$2b$10$CKmWJVt37k0uOfOShorOsOW081S/tNurTmvT3LylJ1guIPtETlJi2', NOW(), NOW()),
-  (4, 'Justin', 'Ami', 'justin@gmail.com', '$2b$10$2dFrGp//fDUdPrDXkNf33Oe0TdEOVh41ZF5mF2kBLEq7wS5s2zSte', NOW(), NOW()),
+  (4, 'Justin', 'Ami', 'justin@gmail.com', '$2b$10$FjD9q3G9dmTDGNNxW4MLh..DqAsC9b3df2Crse1cGPwLEyl9dr8ea', NOW(), NOW()),
   (5, 'Aliou', 'Diallo', 'Aliou@gmail.com', '$2b$10$Nan7EDorK27IkwwS2QNvBOgLMOtHv9/wTn88bLNPpLO2SAKHGNYY6', NOW(), NOW()),
   (6, 'Admin', 'System', 'admin@admin.com', '$2b$10$oVRcIOvMP9qCkpp9tCS3JegOjK5m4Dqn/QvQaqkLKUeR9NuTTCn7i', NOW(), NOW());
 
