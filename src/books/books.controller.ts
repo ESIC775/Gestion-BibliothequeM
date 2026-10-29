@@ -12,15 +12,17 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { BooksService } from './books.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { Roles, CurrentUser, AuthUser } from '../auth/auth.decorators';
 
-import { UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('books')
+@ApiBearerAuth()
 @Controller('books')
 export class BooksController {
   constructor(private readonly booksService: BooksService) {}
 
+  @Roles('ADMIN')
   @Post()
   @ApiOperation({ summary: 'Créer un livre avec sa catégorie et ses auteurs (Many-to-Many)' })
   create(@Body() createBookDto: CreateBookDto) {
@@ -28,17 +30,18 @@ export class BooksController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lister les livres' })
-  findAll() {
-    return this.booksService.findAll();
+  @ApiOperation({ summary: 'Lister les livres (catalogue)' })
+  findAll(@CurrentUser() user: AuthUser) {
+    return this.booksService.findAll(user);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Récupérer un livre' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.booksService.findOne(id);
+  findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.booksService.findOne(id, user);
   }
 
+  @Roles('ADMIN')
   @Patch(':id')
   @ApiOperation({ summary: 'Mettre à jour un livre' })
   update(
@@ -48,6 +51,7 @@ export class BooksController {
     return this.booksService.update(id, updateBookDto);
   }
 
+  @Roles('ADMIN')
   @Delete(':id')
   @ApiOperation({ summary: 'Supprimer un livre' })
   remove(@Param('id', ParseIntPipe) id: number) {

@@ -1,15 +1,14 @@
-import { ApiProperty, PartialType } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { IsDateString, IsIn, IsOptional } from 'class-validator';
-import { CreateLoanDto } from './create-loan.dto';
 
-export class UpdateLoanDto extends PartialType(CreateLoanDto) {
-  @ApiProperty({ required: false, example: '2026-04-18T14:00:00.000Z' })
+export class UpdateLoanDto {
+  @ApiProperty({ required: false, example: '2026-11-20T10:00:00.000Z', description: 'Nouvelle date de retour prévue' })
   @IsOptional()
   @IsDateString()
-  returnedAt?: string;
+  dueDate?: string;
 
-  @ApiProperty({ required: false, example: 'RETURNED', enum: ['BORROWED', 'RETURNED'] })
+  @ApiProperty({ required: false, example: 'RETURNED', enum: ['RETURNED'], description: 'Enregistrer le retour du livre' })
   @IsOptional()
-  @IsIn(['BORROWED', 'RETURNED'])
-  status?: 'BORROWED' | 'RETURNED';
+  @IsIn(['RETURNED'])
+  status?: 'RETURNED';
 }

@@ -24,13 +24,21 @@ export class Reservation extends Model {
   @Column({ type: DataType.DATE, allowNull: false, defaultValue: DataType.NOW })
   declare reservedAt: Date;
 
-  @ApiProperty({ example: 'PENDING', description: 'Statut: PENDING, CANCELLED, COMPLETED' })
+  @ApiProperty({
+    example: 'READY',
+    description:
+      "PENDING = en file d'attente, READY = exemplaire mis de côté au comptoir, COMPLETED = retiré (emprunté), CANCELLED = annulée, EXPIRED = non retirée à temps",
+  })
   @Column({
-    type: DataType.ENUM('PENDING', 'CANCELLED', 'COMPLETED'),
+    type: DataType.ENUM('PENDING', 'READY', 'COMPLETED', 'CANCELLED', 'EXPIRED'),
     defaultValue: 'PENDING',
     allowNull: false,
   })
-  declare status: string;
+  declare status: 'PENDING' | 'READY' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED';
+
+  @ApiProperty({ required: false, nullable: true, description: "Date limite de retrait quand le statut est READY" })
+  @Column({ type: DataType.DATE, allowNull: true })
+  declare expiresAt: Date | null;
 
   @ApiProperty()
   @ForeignKey(() => User)

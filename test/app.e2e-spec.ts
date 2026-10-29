@@ -1,111 +1,49 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import { SequelizeExceptionFilter } from '../src/common/filters/sequelize-exception.filter';
+import { createTestApp } from './test-app';
 
-describe('Library API (e2e)', () => {
-  let app: INestApplication;
+describe('Library API (e2e) — flux de base', () => {
+  let ctx: Awaited<ReturnType<typeof createTestApp>>;
 
   beforeAll(async () => {
-    process.env.NODE_ENV = 'test';
-    const { AppModule } = require('../src/app.module');
-
-    const { JwtAuthGuard } = require('../src/auth/guards/jwt-auth.guard');
-
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideGuard(JwtAuthGuard)
-      .useValue({ canActivate: () => true })
-      .compile();
-
-    app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        transform: true,
-        forbidNonWhitelisted: true,
-      }),
-    );
-    app.useGlobalFilters(new SequelizeExceptionFilter());
-    await app.init();
+    ctx = await createTestApp();
   });
-
   afterAll(async () => {
-    await app.close();
+    await ctx.app.close();
   });
 
-  it('/health (GET)', async () => {
-    const response = await request(app.getHttpServer()).get('/health').expect(200);
+  it('/health est public', async () => {
+    const response = await request(ctx.http()).get('/health').expect(200);
     expect(response.body.status).toBe('ok');
   });
 
-  it('doit exécuter un flux complet de gestion', async () => {
-    const category = await request(app.getHttpServer())
-      .post('/categories')
-      .send({
-        name: 'Roman',
-        description: 'Romans contemporains et classiques',
-      })
-      .expect(201);
+  it('un bibliothécaire gère un flux complet : catégorie, auteur, livre, prêt, retour', async () => {
+    const admin = ctx.as(ctx.admin);
+    const member = await ctx.newMember('Nora');
 
-    const author = await request(app.getHttpServer())
+    const category = await admin.post('/categories').send({ name: 'Roman', description: 'Romans' }).expect(201);
+    const author = await admin
       .post('/authors')
-      .send({
-        firstName: 'Albert',
-        lastName: 'Camus',
-        bio: 'Auteur et philosophe français',
-      })
+      .send({ firstName: 'Albert', lastName: 'Camus', bio: 'Auteur français' })
       .expect(201);
-
-    const user = await request(app.getHttpServer())
-      .post('/users')
-      .send({
-        firstName: 'Nora',
-        lastName: 'Martin',
-        email: 'nora@example.com',
-        password: 'password123',
-        address: '10 Rue de la Paix',
-        phone: '0102030405',
-      })
-      .expect(201);
-
-    const book = await request(app.getHttpServer())
+    const book = await admin
       .post('/books')
       .send({
-        title: 'L\'Étranger',
+        title: "L'Étranger",
         isbn: '978-2070360022',
         publishedYear: 1942,
         totalCopies: 3,
-        availableCopies: 3,
-        summary: 'Roman majeur du XXe siècle',
         categoryId: category.body.id,
         authorIds: [author.body.id],
       })
       .expect(201);
+    expect(book.body.availableCopies).toBe(3);
 
-    const loan = await request(app.getHttpServer())
-      .post('/loans')
-      .send({
-        dueDate: '2026-05-01T10:00:00.000Z',
-        userId: user.body.id,
-        bookId: book.body.id,
-      })
-      .expect(201);
-
+    const loan = await admin.post('/loans').send({ userId: member.id, bookId: book.body.id }).expect(201);
     expect(loan.body.status).toBe('BORROWED');
+    expect((await admin.get(`/books/${book.body.id}`).expect(200)).body.availableCopies).toBe(2);
 
-    const updatedLoan = await request(app.getHttpServer())
-      .patch(`/loans/${loan.body.id}`)
-      .send({ status: 'RETURNED' })
-      .expect(200);
-
-    expect(updatedLoan.body.status).toBe('RETURNED');
-
-    const updatedBook = await request(app.getHttpServer())
-      .get(`/books/${book.body.id}`)
-      .expect(200);
-
-    expect(updatedBook.body.availableCopies).toBe(3);
+    const returned = await admin.patch(`/loans/${loan.body.id}`).send({ status: 'RETURNED' }).expect(200);
+    expect(returned.body.status).toBe('RETURNED');
+    expect((await admin.get(`/books/${book.body.id}`).expect(200)).body.availableCopies).toBe(3);
   });
 });

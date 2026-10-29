@@ -12,15 +12,16 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { Roles, CurrentUser, AuthUser } from '../auth/auth.decorators';
 
 @ApiTags('users')
+@Roles('ADMIN')
+@ApiBearerAuth()
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // @UseGuards(JwtAuthGuard)
   @Post()
   @ApiOperation({ summary: 'Créer un utilisateur adhérent' })
   create(@Body() createUserDto: CreateUserDto) {
@@ -50,7 +51,7 @@ export class UsersController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Supprimer un utilisateur' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.remove(id);
+  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.usersService.remove(id, user.userId);
   }
 }

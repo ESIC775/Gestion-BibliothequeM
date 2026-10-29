@@ -12,14 +12,14 @@ TRUNCATE TABLE reservations;
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- Insertion des données propres
-INSERT INTO users (id, firstName, lastName, email, password, createdAt, updatedAt)
+INSERT INTO users (id, firstName, lastName, email, password, role, createdAt, updatedAt)
 VALUES
-  (1, 'Amina', 'Bensaid', 'amina@example.com', '$2b$10$bayzXtFz1yXioAok53cKSuHICNEmYw3ePTSXp/7JCisjMur9TeY8e', NOW(), NOW()),
-  (2, 'Yanis', 'Dupont', 'yanis@example.com', '$2b$10$bayzXtFz1yXioAok53cKSuHICNEmYw3ePTSXp/7JCisjMur9TeY8e', NOW(), NOW()),
-  (3, 'Mohamed', 'Daoud', 'mohamed@gmail.com', '$2b$10$CKmWJVt37k0uOfOShorOsOW081S/tNurTmvT3LylJ1guIPtETlJi2', NOW(), NOW()),
-  (4, 'Justin', 'Ami', 'justin@gmail.com', '$2b$10$FjD9q3G9dmTDGNNxW4MLh..DqAsC9b3df2Crse1cGPwLEyl9dr8ea', NOW(), NOW()),
-  (5, 'Aliou', 'Diallo', 'Aliou@gmail.com', '$2b$10$Nan7EDorK27IkwwS2QNvBOgLMOtHv9/wTn88bLNPpLO2SAKHGNYY6', NOW(), NOW()),
-  (6, 'Admin', 'System', 'admin@admin.com', '$2b$10$oVRcIOvMP9qCkpp9tCS3JegOjK5m4Dqn/QvQaqkLKUeR9NuTTCn7i', NOW(), NOW());
+  (1, 'Amina', 'Bensaid', 'amina@example.com', '$2b$10$bayzXtFz1yXioAok53cKSuHICNEmYw3ePTSXp/7JCisjMur9TeY8e', 'MEMBER', NOW(), NOW()),
+  (2, 'Yanis', 'Dupont', 'yanis@example.com', '$2b$10$bayzXtFz1yXioAok53cKSuHICNEmYw3ePTSXp/7JCisjMur9TeY8e', 'MEMBER', NOW(), NOW()),
+  (3, 'Mohamed', 'Daoud', 'mohamed@gmail.com', '$2b$10$CKmWJVt37k0uOfOShorOsOW081S/tNurTmvT3LylJ1guIPtETlJi2', 'MEMBER', NOW(), NOW()),
+  (4, 'Justin', 'Ami', 'justin@gmail.com', '$2b$10$FjD9q3G9dmTDGNNxW4MLh..DqAsC9b3df2Crse1cGPwLEyl9dr8ea', 'MEMBER', NOW(), NOW()),
+  (5, 'Aliou', 'Diallo', 'Aliou@gmail.com', '$2b$10$Nan7EDorK27IkwwS2QNvBOgLMOtHv9/wTn88bLNPpLO2SAKHGNYY6', 'MEMBER', NOW(), NOW()),
+  (6, 'Admin', 'System', 'admin@admin.com', '$2b$10$oVRcIOvMP9qCkpp9tCS3JegOjK5m4Dqn/QvQaqkLKUeR9NuTTCn7i', 'ADMIN', NOW(), NOW());
 
 INSERT INTO member_profiles (id, address, phone, membershipNumber, joinedAt, userId, createdAt, updatedAt)
 VALUES
@@ -203,11 +203,11 @@ INSERT INTO books (id, title, isbn, publishedYear, totalCopies, availableCopies,
 VALUES
   (1, 'Les Misérables', '978-2070409189', 1862, 5, 4, 'Roman historique et social.', 'https://covers.openlibrary.org/b/id/12818862-L.jpg', 1, NOW(), NOW()),
   (2, 'Vingt mille lieues sous les mers', '978-2253006324', 1870, 4, 3, 'Aventure sous-marine emblématique.', 'https://covers.openlibrary.org/b/id/8231990-L.jpg', 2, NOW(), NOW()),
-  (3, 'Jamais Plus', '978-2755624734', 2017, 3, 3, 'Lily Bloom s''installe à Boston...', '/covers/jamais_plus.png', 3, NOW(), NOW()),
+  (3, 'Jamais Plus', '978-2755624734', 2017, 3, 2, 'Lily Bloom s''installe à Boston...', '/covers/jamais_plus.png', 3, NOW(), NOW()),
   (4, 'Kings of Sin', '978-2755670007', 2024, 2, 2, 'Une histoire de sin et de luxe.', '/covers/kings_of_sin.png', 3, NOW(), NOW()),
-  (5, 'Just Romance', '978-2755620001', 2023, 2, 2, 'Une histoire de romance passionnée.', '/covers/just_romance.png', 3, NOW(), NOW()),
+  (5, 'Just Romance', '978-2755620001', 2023, 2, 1, 'Une histoire de romance passionnée.', '/covers/just_romance.png', 3, NOW(), NOW()),
   (6, 'Loved', '978-2755620002', 2022, 2, 2, 'Un amour inconditionnel.', '/covers/loved.png', 3, NOW(), NOW()),
-  (7, 'I Want Your Revenge', '978-2755620003', 2024, 2, 2, 'Une vengeance romantique.', '/covers/revenge.png', 3, NOW(), NOW()),
+  (7, 'I Want Your Revenge', '978-2755620003', 2024, 2, 0, 'Une vengeance romantique.', '/covers/revenge.png', 3, NOW(), NOW()),
   (8, 'L''Étranger', '978-2043321816', 1942, 2, 2, 'L''Étranger (1942), de Albert Camus. Catégorie : Roman. Disponible à l''emprunt.', '/covers/book_8.svg', 1, NOW(), NOW()),
   (9, '1984', '978-2600133890', 1949, 6, 6, '1984 (1949), de George Orwell. Catégorie : Science-fiction. Disponible à l''emprunt.', '/covers/book_9.svg', 2, NOW(), NOW()),
   (10, 'Twisted Love', '978-2838637948', 2021, 2, 2, 'Twisted Love (2021), de Ana Huang. Catégorie : Romance. Disponible à l''emprunt.', '/covers/book_10.svg', 3, NOW(), NOW()),
@@ -615,13 +615,25 @@ VALUES
   (199, 151),
   (200, 152);
 
-INSERT INTO loans (id, borrowedAt, dueDate, returnedAt, status, userId, bookId, createdAt, updatedAt)
+-- Prêts de démonstration (stocks cohérents : disponibles + prêtés + mis de côté = total)
+INSERT INTO loans (id, borrowedAt, dueDate, returnedAt, status, renewals, userId, bookId, createdAt, updatedAt)
 VALUES
-  (1, NOW(), ADDDATE(NOW(), 14), NULL, 'BORROWED', 1, 1, NOW(), NOW()),
-  (2, NOW(), ADDDATE(NOW(), 7), NULL, 'BORROWED', 2, 2, NOW(), NOW());
+  -- Amina emprunte "Les Misérables"
+  (1, NOW(), ADDDATE(NOW(), 14), NULL, 'BORROWED', 0, 1, 1, NOW(), NOW()),
+  -- Yanis emprunte "Vingt mille lieues sous les mers"
+  (2, NOW(), ADDDATE(NOW(), 7), NULL, 'BORROWED', 0, 2, 2, NOW(), NOW()),
+  -- Justin et Aliou ont pris les 2 exemplaires de "I Want Your Revenge" (plus aucun disponible)
+  (3, DATE_SUB(NOW(), INTERVAL 4 DAY), ADDDATE(NOW(), 10), NULL, 'BORROWED', 0, 4, 7, NOW(), NOW()),
+  (4, DATE_SUB(NOW(), INTERVAL 9 DAY), ADDDATE(NOW(), 5), NULL, 'BORROWED', 1, 5, 7, NOW(), NOW()),
+  -- Mohamed a déjà rendu "Kings of Sin" (historique)
+  (5, DATE_SUB(NOW(), INTERVAL 20 DAY), DATE_SUB(NOW(), INTERVAL 6 DAY), DATE_SUB(NOW(), INTERVAL 8 DAY), 'RETURNED', 0, 3, 4, NOW(), NOW()),
+  -- Yanis a "Just Romance" EN RETARD (exemple d'amende : 0,20 € par jour, ici environ 0,80 €)
+  (6, DATE_SUB(NOW(), INTERVAL 17 DAY), DATE_SUB(NOW(), INTERVAL 3 DAY), NULL, 'BORROWED', 0, 2, 5, NOW(), NOW());
 
-INSERT INTO reservations (id, reservedAt, status, userId, bookId, createdAt, updatedAt)
+-- Réservations de démonstration
+-- PENDING = file d'attente (plus d'exemplaire libre) ; READY = exemplaire mis de côté au comptoir.
+INSERT INTO reservations (id, reservedAt, status, expiresAt, userId, bookId, createdAt, updatedAt)
 VALUES
-  (1, NOW(), 'PENDING', 3, 1, NOW(), NOW()),
-  (2, NOW(), 'PENDING', 4, 2, NOW(), NOW()),
-  (3, NOW(), 'PENDING', 1, 3, NOW(), NOW());
+  (1, DATE_SUB(NOW(), INTERVAL 2 DAY), 'PENDING', NULL, 3, 7, NOW(), NOW()),
+  (2, DATE_SUB(NOW(), INTERVAL 1 DAY), 'PENDING', NULL, 1, 7, NOW(), NOW()),
+  (3, NOW(), 'READY', ADDDATE(NOW(), 3), 1, 3, NOW(), NOW());

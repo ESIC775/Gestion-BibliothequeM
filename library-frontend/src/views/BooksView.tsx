@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Plus, Edit, Trash2, BookOpen, Search, CalendarDays } from "lucide-react";
+import { Plus, Edit, Trash2, BookOpen, Search, CalendarDays, Hourglass } from "lucide-react";
 import api from "../api";
 import Modal from "../components/Modal";
 import { motion, AnimatePresence } from "framer-motion";
@@ -32,14 +32,18 @@ interface BooksData {
   authors: AuthorOption[];
   categories: CategoryOption[];
   users: any[];
+  loans: { bookId: number; status: string }[];
+  reservations: { bookId: number; status: string; expiresAt: string | null; queuePosition?: number }[];
 }
 
 const BooksView = ({
   data,
   onRefresh,
+  isAdmin,
 }: {
   data: BooksData;
   onRefresh: () => void;
+  isAdmin: boolean;
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
@@ -111,10 +115,13 @@ const BooksView = ({
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
+      // Le stock disponible est calculé par le serveur (prêts et réservations).
+      const payload: Partial<typeof formData> = { ...formData };
+      delete payload.availableCopies;
       if (editingBook) {
-        await api.patch(`/books/${editingBook.id}`, formData);
+        await api.patch(`/books/${editingBook.id}`, payload);
       } else {
-        await api.post("/books", formData);
+        await api.post("/books", payload);
       }
       setIsModalOpen(false);
       setEditingBook(null);
@@ -137,15 +144,24 @@ const BooksView = ({
     if (isSubmitting || !reservingBook) return;
     setIsSubmitting(true);
     try {
-      await api.post("/reservations", {
+      const res = await api.post("/reservations", {
         bookId: reservingBook.id,
-        userId: resFormData.userId,
+        // Un adhérent réserve toujours pour lui-même (le serveur l'impose).
+        ...(isAdmin ? { userId: resFormData.userId } : {}),
       });
       setIsResModalOpen(false);
-      alert("Réservation effectuée avec succès !");
+      alert(
+        res.data.status === "READY"
+          ? "Réservation confirmée : le livre est mis de côté au comptoir pendant 3 jours."
+          : `Vous êtes dans la file d'attente (position ${res.data.queuePosition ?? 1}).`,
+      );
       onRefresh();
     } catch (error: any) {
-      alert("Erreur lors de la réservation: " + (error.response?.data?.message || "Inconnue"));
+      const msg = error.response?.data?.message;
+      alert(
+        "Réservation impossible : " +
+          ((Array.isArray(msg) ? msg.join(", ") : msg) || "erreur inconnue"),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -163,6 +179,7 @@ const BooksView = ({
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+        {isAdmin && (
         <button
           className="btn-primary"
           onClick={() => {
@@ -183,6 +200,7 @@ const BooksView = ({
         >
           <Plus size={18} /> Ajouter un Livre
         </button>
+        )}
       </div>
 
       <div className="books-grid">
@@ -231,31 +249,68 @@ const BooksView = ({
                 </div>
 
                 <div className="book-actions">
-                  <button
-                    className="btn-icon edit"
-                    onClick={() => handleEdit(book)}
-                    title="Modifier"
-                  >
-                    <Edit size={16} />
-                  </button>
-                  <button
-                    className="btn-icon delete"
-                    onClick={() => handleDelete(book.id)}
-                    title="Supprimer"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                  <button
-                    className="btn-icon reserve"
-                    onClick={() => {
-                      setReservingBook(book);
-                      setIsResModalOpen(true);
-                    }}
-                    title="Réserver"
-                    style={{ color: "#ec4899" }}
-                  >
-                    <CalendarDays size={16} />
-                  </button>
+                  {isAdmin && (
+                    <>
+                      <button
+                        className="btn-icon edit"
+                        onClick={() => handleEdit(book)}
+                        title="Modifier"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        className="btn-icon delete"
+                        onClick={() => handleDelete(book.id)}
+                        title="Supprimer"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </>
+                  )}
+                  {(() => {
+                    const borrowed = data.loans.some(
+                      (l) => l.bookId === book.id && l.status === "BORROWED",
+                    );
+                    const hold = data.reservations.find(
+                      (r) =>
+                        r.bookId === book.id &&
+                        (r.status === "PENDING" || r.status === "READY"),
+                    );
+                    // Pour un adhérent, loans / reservations ne contiennent que les siens.
+                    if (!isAdmin && borrowed) {
+                      return <span className="my-status borrowed">Vous l'avez emprunté</span>;
+                    }
+                    if (!isAdmin && hold) {
+                      return hold.status === "READY" ? (
+                        <span className="my-status ready">Prêt à retirer au comptoir</span>
+                      ) : (
+                        <span className="my-status waiting">
+                          En file d'attente (n° {hold.queuePosition ?? 1})
+                        </span>
+                      );
+                    }
+                    return (
+                      <button
+                        className="btn-reserve"
+                        onClick={() => {
+                          setReservingBook(book);
+                          setIsResModalOpen(true);
+                        }}
+                        title={
+                          book.availableCopies > 0
+                            ? "Mettre un exemplaire de côté pendant 3 jours"
+                            : "Aucun exemplaire libre : rejoindre la file d'attente"
+                        }
+                      >
+                        {book.availableCopies > 0 ? (
+                          <CalendarDays size={16} />
+                        ) : (
+                          <Hourglass size={16} />
+                        )}
+                        {book.availableCopies > 0 ? "Réserver" : "File d'attente"}
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
             </motion.div>
@@ -338,7 +393,6 @@ const BooksView = ({
                   setFormData({
                     ...formData,
                     totalCopies: parseInt(e.target.value),
-                    availableCopies: parseInt(e.target.value),
                   })
                 }
               />
@@ -423,22 +477,30 @@ const BooksView = ({
         title={`Réserver : ${reservingBook?.title}`}
       >
         <form onSubmit={handleReserve} className="book-form">
-          <div className="form-group">
-            <label>Choisir le membre qui réserve</label>
-            <select
-              value={resFormData.userId}
-              onChange={(e) =>
-                setResFormData({ ...resFormData, userId: parseInt(e.target.value) })
-              }
-              required
-            >
-              {data.users.map((u: any) => (
-                <option key={u.id} value={u.id}>
-                  {u.firstName} {u.lastName} ({u.id})
-                </option>
-              ))}
-            </select>
-          </div>
+          {isAdmin ? (
+            <div className="form-group">
+              <label>Choisir le membre qui réserve</label>
+              <select
+                value={resFormData.userId}
+                onChange={(e) =>
+                  setResFormData({ ...resFormData, userId: parseInt(e.target.value) })
+                }
+                required
+              >
+                {data.users.map((u: any) => (
+                  <option key={u.id} value={u.id}>
+                    {u.firstName} {u.lastName} ({u.id})
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <p className="info-note">
+              {reservingBook && reservingBook.availableCopies > 0
+                ? "Un exemplaire sera mis de côté pour vous au comptoir pendant 3 jours."
+                : "Aucun exemplaire n'est libre : vous serez prévenu dans « Mes réservations » dès qu'il sera disponible."}
+            </p>
+          )}
           <div className="form-actions">
             <button
               type="button"
