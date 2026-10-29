@@ -12,8 +12,12 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ProfilesService } from './profiles.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { Roles, CurrentUser, AuthUser } from '../auth/auth.decorators';
 
 @ApiTags('profiles')
+@Roles('ADMIN')
+@ApiBearerAuth()
 @Controller('profiles')
 export class ProfilesController {
   constructor(private readonly profilesService: ProfilesService) {}

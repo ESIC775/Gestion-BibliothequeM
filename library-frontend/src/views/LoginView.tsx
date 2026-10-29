@@ -1,22 +1,19 @@
 import { useState } from "react";
-import { Library, Mail, Lock, LogIn, AlertCircle } from "lucide-react";
+import { Library, Mail, Lock, LogIn, AlertCircle, User, UserPlus } from "lucide-react";
 import api from "../api";
 import { motion } from "framer-motion";
-
-interface User {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-}
+import type { AppUser } from "../App";
 
 interface LoginViewProps {
-  onLogin: (user: User) => void;
+  onLogin: (user: AppUser) => void;
 }
 
 const LoginView = ({ onLogin }: LoginViewProps) => {
-  const [email, setEmail] = useState("admin@admin.com");
-  const [password, setPassword] = useState("admin123");
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -25,16 +22,35 @@ const LoginView = ({ onLogin }: LoginViewProps) => {
     setLoading(true);
     setError("");
     try {
-      const response = await api.post("/auth/login", { email, password });
+      const response =
+        mode === "login"
+          ? await api.post("/auth/login", { email, password })
+          : await api.post("/auth/register", {
+              firstName,
+              lastName,
+              email,
+              password,
+            });
       localStorage.setItem("token", response.data.access_token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
       onLogin(response.data.user);
     } catch (err: unknown) {
-      const e = err as { response?: { data?: { message?: string } } };
-      setError(e.response?.data?.message || "Identifiants invalides");
+      const e = err as {
+        response?: { data?: { message?: string | string[] } };
+      };
+      const msg = e.response?.data?.message;
+      setError(
+        (Array.isArray(msg) ? msg.join(", ") : msg) ||
+          (mode === "login" ? "Identifiants invalides" : "Inscription impossible"),
+      );
     } finally {
       setLoading(false);
     }
+  };
+
+  const switchMode = () => {
+    setMode(mode === "login" ? "register" : "login");
+    setError("");
   };
 
   return (
@@ -47,7 +63,11 @@ const LoginView = ({ onLogin }: LoginViewProps) => {
         <div className="login-header">
           <Library className="logo-icon" size={48} />
           <h1>Gestion de Bibliothèque</h1>
-          <p>Connectez-vous pour gérer la bibliothèque</p>
+          <p>
+            {mode === "login"
+              ? "Connectez-vous pour accéder à la bibliothèque"
+              : "Créez votre compte adhérent"}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -56,6 +76,37 @@ const LoginView = ({ onLogin }: LoginViewProps) => {
               <AlertCircle size={18} />
               <span>{error}</span>
             </div>
+          )}
+
+          {mode === "register" && (
+            <>
+              <div className="form-group">
+                <label>Prénom</label>
+                <div className="input-with-icon">
+                  <User size={18} />
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Sarah"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Nom</label>
+                <div className="input-with-icon">
+                  <User size={18} />
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Martin"
+                    required
+                  />
+                </div>
+              </div>
+            </>
           )}
 
           <div className="form-group">
@@ -73,7 +124,9 @@ const LoginView = ({ onLogin }: LoginViewProps) => {
           </div>
 
           <div className="form-group">
-            <label>Mot de passe</label>
+            <label>
+              Mot de passe{mode === "register" ? " (6 caractères minimum)" : ""}
+            </label>
             <div className="input-with-icon">
               <Lock size={18} />
               <input
@@ -81,6 +134,7 @@ const LoginView = ({ onLogin }: LoginViewProps) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                minLength={mode === "register" ? 6 : undefined}
                 required
               />
             </div>
@@ -89,11 +143,21 @@ const LoginView = ({ onLogin }: LoginViewProps) => {
           <button type="submit" className="btn-login" disabled={loading}>
             {loading ? (
               <div className="loader small"></div>
-            ) : (
+            ) : mode === "login" ? (
               <>
                 <LogIn size={18} /> Connexion
               </>
+            ) : (
+              <>
+                <UserPlus size={18} /> Créer mon compte
+              </>
             )}
+          </button>
+
+          <button type="button" className="link-button" onClick={switchMode}>
+            {mode === "login"
+              ? "Pas encore de compte ? S'inscrire"
+              : "Déjà inscrit ? Se connecter"}
           </button>
         </form>
       </motion.div>

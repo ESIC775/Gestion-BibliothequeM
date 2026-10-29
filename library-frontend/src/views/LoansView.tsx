@@ -7,6 +7,8 @@ import {
   User,
   Edit,
   Trash2,
+  RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import api from "../api";
 import Modal from "../components/Modal";
@@ -17,6 +19,10 @@ interface Loan {
   dueDate: string;
   returnedAt: string | null;
   status: "BORROWED" | "RETURNED";
+  renewals: number;
+  overdue: boolean;
+  daysLate: number;
+  fine: number;
   userId: number;
   bookId: number;
   user?: { firstName: string; lastName: string };
@@ -39,12 +45,20 @@ interface LoansData {
   books: BookOption[];
 }
 
+const errorText = (error: unknown, fallback: string) => {
+  const e = error as { response?: { data?: { message?: string | string[] } } };
+  const msg = e.response?.data?.message;
+  return (Array.isArray(msg) ? msg.join(", ") : msg) || fallback;
+};
+
 const LoansView = ({
   data,
   onRefresh,
+  isAdmin,
 }: {
   data: LoansData;
   onRefresh: () => void;
+  isAdmin: boolean;
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
@@ -66,8 +80,17 @@ const LoansView = ({
     try {
       await api.patch(`/loans/${id}`, { status: "RETURNED" });
       onRefresh();
-    } catch {
-      alert("Erreur lors du retour");
+    } catch (error) {
+      alert(errorText(error, "Erreur lors du retour"));
+    }
+  };
+
+  const handleRenew = async (id: number) => {
+    try {
+      await api.post(`/loans/${id}/renew`);
+      onRefresh();
+    } catch (error) {
+      alert(errorText(error, "Renouvellement impossible"));
     }
   };
 
@@ -80,8 +103,8 @@ const LoansView = ({
       try {
         await api.delete(`/loans/${id}`);
         onRefresh();
-      } catch {
-        alert("Erreur lors de la suppression");
+      } catch (error) {
+        alert(errorText(error, "Erreur lors de la suppression"));
       }
     }
   };
@@ -116,7 +139,6 @@ const LoansView = ({
     try {
       if (editingLoan) {
         await api.patch(`/loans/${editingLoan.id}`, {
-          userId: formData.userId,
           dueDate: new Date(formData.dueDate).toISOString(),
         });
       } else {
@@ -143,11 +165,21 @@ const LoansView = ({
 
   return (
     <div className="view-content">
-      <div className="view-actions">
-        <button className="btn-primary" onClick={openNewModal}>
-          <Plus size={18} /> Nouvel Emprunt
-        </button>
-      </div>
+      {isAdmin ? (
+        <div className="view-actions">
+          <button className="btn-primary" onClick={openNewModal}>
+            <Plus size={18} /> Nouvel Emprunt
+          </button>
+        </div>
+      ) : (
+        <p className="info-note">
+          Vos emprunts sont enregistrés au comptoir par un bibliothécaire. Vous pouvez renouveler un prêt (2 fois
+          maximum) tant qu'il n'est pas en retard.
+        </p>
+      )}
+      {data.loans.length === 0 && (
+        <p className="empty-state">{isAdmin ? "Aucun emprunt pour le moment." : "Vous n'avez aucun emprunt."}</p>
+      )}
 
       <div className="grid-list">
         {data.loans.map((loan: Loan) => (
@@ -156,8 +188,14 @@ const LoansView = ({
             className={`item-card loan-card ${loan.status.toLowerCase()}`}
           >
             <div className="loan-header">
-              <span className={`status-pill ${loan.status.toLowerCase()}`}>
-                {loan.status === "BORROWED" ? "En cours" : "Rendu"}
+              <span
+                className={`status-pill ${loan.overdue ? "overdue" : loan.status.toLowerCase()}`}
+              >
+                {loan.status === "RETURNED"
+                  ? "Rendu"
+                  : loan.overdue
+                    ? `En retard (${loan.daysLate} j)`
+                    : "En cours"}
               </span>
               <p className="date">
                 Le {new Date(loan.borrowedAt).toLocaleDateString()}
@@ -169,12 +207,26 @@ const LoansView = ({
                 <BookOpen size={16} />
                 <span>{loan.book?.title}</span>
               </div>
-              <div className="detail-item">
-                <User size={16} />
-                <span>
-                  {loan.user?.firstName} {loan.user?.lastName}
-                </span>
-              </div>
+              {isAdmin && (
+                <div className="detail-item">
+                  <User size={16} />
+                  <span>
+                    {loan.user?.firstName} {loan.user?.lastName}
+                  </span>
+                </div>
+              )}
+              {loan.fine > 0 && (
+                <div className="detail-item fine">
+                  <AlertTriangle size={16} />
+                  <span>Amende : {loan.fine.toFixed(2)} €</span>
+                </div>
+              )}
+              {loan.status === "BORROWED" && (
+                <div className="detail-item">
+                  <RefreshCw size={16} />
+                  <span>Renouvelé {loan.renewals} / 2 fois</span>
+                </div>
+              )}
             </div>
 
             <div
@@ -206,30 +258,44 @@ const LoansView = ({
                   padding: 0,
                 }}
               >
-                {loan.status === "BORROWED" && (
+                {loan.status === "BORROWED" && !loan.overdue && (
+                  <button
+                    className="btn-icon"
+                    style={{ color: "#3b82f6" }}
+                    onClick={() => handleRenew(loan.id)}
+                    title="Renouveler de 14 jours"
+                  >
+                    <RefreshCw size={16} />
+                  </button>
+                )}
+                {isAdmin && loan.status === "BORROWED" && (
                   <button
                     className="btn-icon"
                     style={{ color: "#10b981" }}
                     onClick={() => handleReturn(loan.id)}
-                    title="Rendre le livre"
+                    title="Enregistrer le retour"
                   >
                     <CheckCircle2 size={16} />
                   </button>
                 )}
-                <button
-                  className="btn-icon edit"
-                  onClick={() => handleEdit(loan)}
-                  title="Modifier"
-                >
-                  <Edit size={16} />
-                </button>
-                <button
-                  className="btn-icon delete"
-                  onClick={() => handleDelete(loan.id)}
-                  title="Supprimer"
-                >
-                  <Trash2 size={16} />
-                </button>
+                {isAdmin && loan.status === "BORROWED" && (
+                  <button
+                    className="btn-icon edit"
+                    onClick={() => handleEdit(loan)}
+                    title="Modifier la date de retour"
+                  >
+                    <Edit size={16} />
+                  </button>
+                )}
+                {isAdmin && (
+                  <button
+                    className="btn-icon delete"
+                    onClick={() => handleDelete(loan.id)}
+                    title="Supprimer"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -250,6 +316,7 @@ const LoansView = ({
                 setFormData({ ...formData, userId: parseInt(e.target.value) })
               }
               required
+              disabled={!!editingLoan}
             >
               {data.users.map((u: UserOption) => (
                 <option key={u.id} value={u.id}>

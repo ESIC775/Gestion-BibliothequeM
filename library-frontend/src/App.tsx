@@ -11,6 +11,9 @@ import {
   RefreshCcw,
   LogOut,
   CalendarDays,
+  AlertTriangle,
+  PackageCheck,
+  Euro,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "./api";
@@ -32,11 +35,12 @@ type View =
   | "loans"
   | "reservations";
 
-interface AppUser {
+export interface AppUser {
   id: number;
   firstName: string;
   lastName: string;
   email: string;
+  role: "ADMIN" | "MEMBER";
 }
 interface Loan {
   id: number;
@@ -44,6 +48,10 @@ interface Loan {
   borrowedAt: string;
   dueDate: string;
   returnedAt: string | null;
+  renewals: number;
+  overdue: boolean;
+  daysLate: number;
+  fine: number;
   userId: number;
   bookId: number;
   user?: { firstName: string; lastName: string };
@@ -51,8 +59,10 @@ interface Loan {
 }
 interface Reservation {
   id: number;
-  status: "PENDING" | "CANCELLED" | "COMPLETED";
+  status: "PENDING" | "READY" | "COMPLETED" | "CANCELLED" | "EXPIRED";
   reservedAt: string;
+  expiresAt: string | null;
+  queuePosition?: number;
   userId: number;
   bookId: number;
   user?: { firstName: string; lastName: string };
@@ -78,6 +88,7 @@ interface AppData {
     firstName: string;
     lastName: string;
     email: string;
+    role?: "ADMIN" | "MEMBER";
     profile?: { address: string; phone: string; membershipNumber: string };
   }[];
   loans: Loan[];
@@ -85,8 +96,21 @@ interface AppData {
   categories: { id: number; name: string }[];
 }
 
+/** Récupère la session sauvegardée (uniquement si elle contient un rôle : anciennes sessions ignorées). */
+const readSavedUser = (): AppUser | null => {
+  try {
+    const savedUser = localStorage.getItem("user");
+    const savedToken = localStorage.getItem("token");
+    if (!savedUser || !savedToken) return null;
+    const parsed = JSON.parse(savedUser);
+    return parsed?.role ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
 function App() {
-  const [user, setUser] = useState<AppUser | null>(null);
+  const [user, setUser] = useState<AppUser | null>(readSavedUser);
   const [currentView, setCurrentView] = useState<View>("dashboard");
   const [data, setData] = useState<AppData>({
     books: [],
@@ -97,41 +121,24 @@ function App() {
     categories: [],
   });
   const [loading, setLoading] = useState(true);
+  const isAdmin = user?.role === "ADMIN";
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    const savedToken = localStorage.getItem("token");
-
-    if (savedUser && savedToken) {
-      setUser(JSON.parse(savedUser));
-    } else {
-      autoLogin();
-    }
-    fetchData();
-  }, []);
-
-  const autoLogin = async () => {
-    try {
-      const response = await api.post("/auth/login", {
-        email: "admin@admin.com",
-        password: "admin123",
-      });
-      localStorage.setItem("token", response.data.access_token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
-      setUser(response.data.user);
-    } catch (err) {
-      console.error("Auto-login failed:", err);
-    }
-  };
+    if (user) fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const fetchData = async () => {
+    if (!user) return;
     setLoading(true);
     try {
+      // La liste des membres est réservée aux bibliothécaires.
+      const noUsers = Promise.resolve({ data: [] });
       const [booksRes, authorsRes, usersRes, loansRes, resRes, catsRes] =
         await Promise.all([
           api.get("/books"),
           api.get("/authors"),
-          api.get("/users"),
+          isAdmin ? api.get("/users") : noUsers,
           api.get("/loans"),
           api.get("/reservations"),
           api.get("/categories"),
@@ -154,6 +161,7 @@ function App() {
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    setCurrentView("dashboard");
     setUser(null);
   };
 
@@ -182,6 +190,24 @@ function App() {
     </button>
   );
 
+  const titles: Record<View, string> = isAdmin
+    ? {
+        dashboard: "Tableau de Bord",
+        books: "Gestion des Livres",
+        authors: "Gestion des Auteurs",
+        users: "Gestion des Membres",
+        loans: "Gestion des Emprunts",
+        reservations: "Gestion des Réservations",
+      }
+    : {
+        dashboard: "Mon Espace",
+        books: "Catalogue",
+        authors: "Auteurs",
+        users: "Membres",
+        loans: "Mes Emprunts",
+        reservations: "Mes Réservations",
+      };
+
   return (
     <div className="app-container">
       <aside className="sidebar">
@@ -196,17 +222,31 @@ function App() {
           <SidebarItem
             id="dashboard"
             icon={LayoutDashboard}
-            label="Tableau de Bord"
+            label={isAdmin ? "Tableau de Bord" : "Mon Espace"}
           />
-          <div className="nav-divider">Gestion</div>
-          <SidebarItem id="books" icon={BookOpen} label="Livres" />
-          <SidebarItem id="authors" icon={UserCircle} label="Auteurs" />
-          <SidebarItem id="users" icon={Users} label="Membres" />
-          <SidebarItem id="loans" icon={Clock} label="Emprunts" />
+          <div className="nav-divider">
+            {isAdmin ? "Gestion" : "Bibliothèque"}
+          </div>
+          <SidebarItem
+            id="books"
+            icon={BookOpen}
+            label={isAdmin ? "Livres" : "Catalogue"}
+          />
+          {isAdmin && (
+            <>
+              <SidebarItem id="authors" icon={UserCircle} label="Auteurs" />
+              <SidebarItem id="users" icon={Users} label="Membres" />
+            </>
+          )}
+          <SidebarItem
+            id="loans"
+            icon={Clock}
+            label={isAdmin ? "Emprunts" : "Mes emprunts"}
+          />
           <SidebarItem
             id="reservations"
             icon={CalendarDays}
-            label="Réservations"
+            label={isAdmin ? "Réservations" : "Mes réservations"}
           />
         </nav>
 
@@ -214,7 +254,10 @@ function App() {
           <div className="user-info">
             <div className="user-pill">
               <UserIcon size={16} />
-              <span>{user.firstName}</span>
+              <span>
+                {user.firstName}
+                {isAdmin ? " (bibliothécaire)" : ""}
+              </span>
             </div>
             <button className="btn-logout" onClick={logout} title="Déconnexion">
               <LogOut size={18} />
@@ -225,19 +268,7 @@ function App() {
 
       <main className="main-content">
         <header className="content-header">
-          <h2>
-            {currentView === "dashboard"
-              ? "Tableau de Bord"
-              : currentView === "books"
-                ? "Gestion des Livres"
-                : currentView === "authors"
-                  ? "Gestion des Auteurs"
-                  : currentView === "users"
-                    ? "Gestion des Membres"
-                    : currentView === "loans"
-                      ? "Gestion des Emprunts"
-                      : "Gestion des Réservations"}
-          </h2>
+          <h2>{titles[currentView]}</h2>
           <div className="header-actions">
             <div className="search-bar">
               <Search size={18} />
@@ -271,21 +302,35 @@ function App() {
                 transition={{ duration: 0.2 }}
                 className="view-container"
               >
-                {currentView === "dashboard" && <DashboardView data={data} />}
-                {currentView === "books" && (
-                  <BooksView data={data} onRefresh={fetchData} />
+                {currentView === "dashboard" && (
+                  <DashboardView data={data} isAdmin={isAdmin} />
                 )}
-                {currentView === "authors" && (
+                {currentView === "books" && (
+                  <BooksView
+                    data={data}
+                    onRefresh={fetchData}
+                    isAdmin={isAdmin}
+                  />
+                )}
+                {currentView === "authors" && isAdmin && (
                   <AuthorsView data={data} onRefresh={fetchData} />
                 )}
-                {currentView === "users" && (
+                {currentView === "users" && isAdmin && (
                   <UsersView data={data} onRefresh={fetchData} />
                 )}
                 {currentView === "loans" && (
-                  <LoansView data={data} onRefresh={fetchData} />
+                  <LoansView
+                    data={data}
+                    onRefresh={fetchData}
+                    isAdmin={isAdmin}
+                  />
                 )}
                 {currentView === "reservations" && (
-                  <ReservationsView data={data} onRefresh={fetchData} />
+                  <ReservationsView
+                    data={data}
+                    onRefresh={fetchData}
+                    isAdmin={isAdmin}
+                  />
                 )}
               </motion.div>
             )}
@@ -296,42 +341,91 @@ function App() {
   );
 }
 
-const DashboardView = ({ data }: { data: AppData }) => (
-  <div className="dashboard-grid fade-in">
-    <StatCard
-      icon={BookOpen}
-      label="Livres"
-      count={data.books.length}
-      color="#3b82f6"
-    />
-    <StatCard
-      icon={Users}
-      label="Membres"
-      count={data.users.length}
-      color="#10b981"
-    />
-    <StatCard
-      icon={Clock}
-      label="Emprunts en cours"
-      count={data.loans.filter((l: Loan) => l.status === "BORROWED").length}
-      color="#f59e0b"
-    />
-    <StatCard
-      icon={LayoutDashboard}
-      label="Retours effectués"
-      count={data.loans.filter((l: Loan) => l.status === "RETURNED").length}
-      color="#8b5cf6"
-    />
-    <StatCard
-      icon={CalendarDays}
-      label="Réservations"
-      count={
-        data.reservations.filter((r: any) => r.status === "PENDING").length
-      }
-      color="#ec4899"
-    />
-  </div>
-);
+const DashboardView = ({
+  data,
+  isAdmin,
+}: {
+  data: AppData;
+  isAdmin: boolean;
+}) => {
+  const borrowed = data.loans.filter((l: Loan) => l.status === "BORROWED");
+  const overdue = borrowed.filter((l: Loan) => l.overdue);
+  const ready = data.reservations.filter((r) => r.status === "READY");
+  const waiting = data.reservations.filter((r) => r.status === "PENDING");
+  const fines = data.loans.reduce((sum, l) => sum + (l.fine || 0), 0);
+
+  return (
+    <div className="fade-in">
+      <div className="dashboard-grid">
+        <StatCard
+          icon={BookOpen}
+          label={isAdmin ? "Livres" : "Livres au catalogue"}
+          count={data.books.length}
+          color="#3b82f6"
+        />
+        {isAdmin && (
+          <StatCard
+            icon={Users}
+            label="Membres"
+            count={data.users.length}
+            color="#10b981"
+          />
+        )}
+        <StatCard
+          icon={Clock}
+          label={isAdmin ? "Emprunts en cours" : "Mes emprunts en cours"}
+          count={borrowed.length}
+          color="#f59e0b"
+        />
+        <StatCard
+          icon={AlertTriangle}
+          label="En retard"
+          count={overdue.length}
+          color="#dc2626"
+        />
+        {isAdmin && (
+          <StatCard
+            icon={LayoutDashboard}
+            label="Retours effectués"
+            count={data.loans.filter((l: Loan) => l.status === "RETURNED").length}
+            color="#8b5cf6"
+          />
+        )}
+        <StatCard
+          icon={PackageCheck}
+          label="Réservations à retirer"
+          count={ready.length}
+          color="#16a34a"
+        />
+        <StatCard
+          icon={CalendarDays}
+          label="En file d'attente"
+          count={waiting.length}
+          color="#ec4899"
+        />
+        {fines > 0 && (
+          <StatCard
+            icon={Euro}
+            label={isAdmin ? "Amendes cumulées (€)" : "Mes amendes (€)"}
+            count={Number(fines.toFixed(2))}
+            color="#dc2626"
+          />
+        )}
+      </div>
+
+      <div className="rules-box">
+        <h3>Règles de la bibliothèque</h3>
+        <ul>
+          <li>Un prêt dure <strong>14 jours</strong>, avec <strong>3 livres</strong> maximum en même temps.</li>
+          <li>Chaque prêt peut être renouvelé <strong>2 fois</strong> (+14 jours), sauf s'il est en retard ou réservé par quelqu'un d'autre.</li>
+          <li>Un livre réservé et disponible est mis de côté <strong>3 jours</strong> au comptoir. Sinon, vous entrez dans la file d'attente.</li>
+          <li>Retard : <strong>0,20 € par jour</strong>. Tant qu'un livre est en retard, il est impossible d'emprunter ou de réserver.</li>
+          <li>Les prêts sont enregistrés au comptoir par un bibliothécaire.</li>
+        </ul>
+      </div>
+    </div>
+  );
+};
 
 const StatCard = ({
   icon: Icon,

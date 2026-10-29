@@ -26,7 +26,10 @@ async function bootstrap() {
     .addTag("authors")
     .addTag("categories")
     .addTag("books")
+    .addTag("auth")
     .addTag("loans")
+    .addTag("reservations")
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

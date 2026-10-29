@@ -25,7 +25,7 @@ L'application permet la gestion centralisée d'une bibliothèque :
 
 - **Gérer des adhérents et leurs profils détaillés** (1-1).
 - **Gérer un catalogue de livres, classés par catégories et auteurs** (1-N et N-N) avec la gestion des images de couverture.
-- **Réaliser des emprunts et des retours**, avec mise à jour automatisée des stocks de livres dispo.
+- **Réaliser des emprunts et des retours** au comptoir, avec stock mis à jour automatiquement, **réservations avec file d'attente**, renouvellements et amendes de retard (voir §9).
 - **Visualiser et interagir** via une interface utilisateur moderne (React/Vite).
 - **Consommer les données** via une API REST sécurisée (NestJS) totalement documentée.
 
@@ -84,9 +84,8 @@ Gestion-Bibliotheque-Mohamed-justin/
 │   ├── app.e2e-spec.ts             # Tests de bout en bout (scénarios réels)
 │   └── jest-e2e.json               # Configuration Jest pour le mode E2E
 │
-├── docker/
-│   └── db/
-│       └── seed.sql                # Jeu de données SQL initial
+├── db/
+│   └── seed.sql                # Jeu de données SQL initial
 │
 ├── docker-compose.yml              # Orchestration Docker (API + Database)
 ├── Dockerfile                      # Environnement de déploiement Node.js
@@ -150,7 +149,14 @@ docker compose down
 
 # Forcer la reconstruction (si vous avez changé le code)
 docker compose up -d --build
+
+# Repartir d'une base vide (obligatoire après une mise à jour du schéma, voir ci-dessous)
+docker compose down -v && docker compose up -d --build
 ```
+
+> **Mise à jour depuis une ancienne version :** le schéma a changé (rôle des comptes, renouvellements, nouveaux statuts de réservation). Une base MySQL créée avant cette mise à jour n'est pas migrée automatiquement : lancez une fois `docker compose down -v` puis `docker compose up -d --build`.
+>
+> Le jeu de données n'est chargé **qu'une seule fois** (base vide). Pour tout réinitialiser sans supprimer le volume : `docker compose run --rm -e FORCE_SEED=1 db-seed`.
 
 #### Accès aux services :
 - **Backend API** : `http://localhost:3000`
@@ -341,3 +347,47 @@ Réponse JSON 201 → React met à jour l'affichage
 **Oui, cette architecture est entièrement implémentée dans ce projet.** Le frontend React, l'API NestJS et la base MySQL sont chacun conteneurisés via Docker Compose et communiquent exactement selon ce schéma.
 
 ---
+
+---
+
+## 9) Rôles, règles de la bibliothèque et comptes
+
+### Rôles
+
+| Rôle | Ce qu'il peut faire |
+|---|---|
+| **MEMBER** (adhérent / étudiant) | S'inscrire seul, consulter le catalogue, **réserver**, annuler ses réservations, voir **ses** prêts, **renouveler** ses prêts |
+| **ADMIN** (bibliothécaire) | Tout le reste : livres, auteurs, catégories, membres, **enregistrer les prêts et retours** au comptoir, voir tous les prêts et réservations |
+
+Toutes les routes exigent un jeton JWT, sauf `GET /health`, `POST /auth/login` et `POST /auth/register`. L'inscription crée toujours un compte `MEMBER` : le rôle `ADMIN` ne peut être donné que par un bibliothécaire. Les mots de passe sont chiffrés (bcrypt) et jamais renvoyés par l'API. Un adhérent ne voit jamais les prêts des autres.
+
+### Règles de prêt (modifiables dans `src/circulation/circulation.rules.ts`)
+
+- Prêt de **14 jours** par défaut (30 jours maximum), **3 livres** maximum en même temps, pas deux fois le même livre.
+- **Renouvellement** : +14 jours, **2 fois** maximum, impossible si le prêt est en retard ou si un autre adhérent a réservé le livre.
+- **Retard** : amende de **0,20 € par jour**. Tant qu'un livre est en retard, le membre ne peut ni emprunter, ni réserver, ni renouveler.
+
+### Règles de réservation
+
+- Livre **disponible** : un exemplaire est **mis de côté** au comptoir (statut `READY`) pendant **3 jours**. Passé ce délai, la réservation **expire** et l'exemplaire est remis en circulation.
+- Livre **indisponible** : l'adhérent entre dans la **file d'attente** (`PENDING`, avec sa position). Quand un exemplaire est rendu, il est gardé pour le premier de la file.
+- Maximum **3 réservations actives** par adhérent, pas de doublon. Quand le bibliothécaire enregistre le prêt, la réservation passe à `COMPLETED`.
+- Un livre ne peut pas être supprimé tant qu'il est prêté ou réservé ; un adhérent ne peut pas être supprimé tant qu'il a un livre à rendre.
+
+Stock : à tout moment, `exemplaires disponibles + prêtés + mis de côté = total`.
+
+### Comptes du jeu de données
+
+| Email | Rôle |
+|---|---|
+| `admin@admin.com` | ADMIN (bibliothécaire) : mot de passe défini dans `db/seed.sql` |
+| `amina@example.com`, `yanis@example.com`, `mohamed@gmail.com`, `justin@gmail.com`, `Aliou@gmail.com` | MEMBER |
+
+Le seed contient aussi des exemples de démonstration : une file d'attente, une réservation prête à retirer, un prêt en retard (avec amende) et un historique de prêt rendu.
+
+### Tests
+
+```bash
+npm test            # tests unitaires
+npm run test:e2e    # scénarios complets avec vrais comptes (droits, prêts, retards, réservations, suppressions)
+```

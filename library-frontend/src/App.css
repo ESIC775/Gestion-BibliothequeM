@@ -913,3 +913,58 @@
   color: var(--text-muted);
   font-style: italic;
 }
+
+
+/* ===== Rôles, réservations, retards ===== */
+.status-pill.overdue { background: #fee2e2; color: #991b1b; }
+.detail-item.fine { color: #b91c1c; font-weight: 600; }
+.status-badge.ready { background-color: #ecfdf5; color: #047857; }
+.status-badge.expired { background-color: #f3f4f6; color: #6b7280; }
+.status-detail { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+.info-note {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+.rules-box {
+  margin-top: 2rem;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+}
+.rules-box h3 { margin: 0 0 0.75rem; font-size: 1rem; }
+.rules-box ul { margin: 0; padding-left: 1.2rem; line-height: 1.7; color: var(--text-muted); }
+.btn-reserve {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #ec4899;
+  background: #fdf2f8;
+  color: #be185d;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.btn-reserve:hover { background: #fce7f3; }
+.my-status { font-size: 0.82rem; font-weight: 600; padding: 6px 4px; }
+.my-status.borrowed { color: #92400e; }
+.my-status.ready { color: #047857; }
+.my-status.waiting { color: #be185d; }
+.link-button {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-decoration: underline;
+}

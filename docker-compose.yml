@@ -40,6 +40,7 @@ services:
       DB_USER: root
       DB_PASSWORD: Youssouf2000
       DB_SYNC: "true"
+      JWT_SECRET: ${JWT_SECRET:-secret_key_2026}
     ports:
       - "3000:3000"
     healthcheck:
@@ -75,8 +76,13 @@ services:
       - ./db/seed.sql:/seed/seed.sql:ro
     entrypoint: ["/bin/sh", "-c"]
     command: >
-      "until mysql -h db -u root -pYoussouf2000 library_db -e \"SELECT 1 FROM users LIMIT 1\" > /dev/null 2>&1; do echo 'Attente création des tables...'; sleep 2; done;
-      echo 'Injection du jeu de données minimal...';
+      "until mysql -h db -u root -pYoussouf2000 library_db -N -e \"SELECT (SELECT COUNT(*) FROM users)+(SELECT COUNT(*) FROM member_profiles)+(SELECT COUNT(*) FROM authors)+(SELECT COUNT(*) FROM categories)+(SELECT COUNT(*) FROM books)+(SELECT COUNT(*) FROM book_authors)+(SELECT COUNT(*) FROM loans)+(SELECT COUNT(*) FROM reservations)\" > /dev/null 2>&1; do echo 'Attente création des tables...'; sleep 2; done;
+      COUNT=$$(mysql -h db -u root -pYoussouf2000 library_db -N -e 'SELECT COUNT(*) FROM users' 2>/dev/null);
+      if [ \"$$COUNT\" != \"0\" ] && [ -z \"$$FORCE_SEED\" ]; then
+        echo 'Base déjà initialisée : seed ignoré (FORCE_SEED=1 pour tout réinitialiser).';
+        exit 0;
+      fi;
+      echo 'Injection du jeu de données...';
       mysql -h db -u root -pYoussouf2000 --default-character-set=utf8mb4 library_db < /seed/seed.sql;
       echo 'Seed terminé.'"
     restart: "no"

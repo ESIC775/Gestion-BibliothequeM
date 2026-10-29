@@ -32,10 +32,15 @@ export class CreateBookDto {
   @Min(1)
   totalCopies: number;
 
-  @ApiProperty({ example: 5 })
+  @ApiProperty({
+    example: 5,
+    required: false,
+    description: 'Ignoré : le nombre d’exemplaires disponibles est calculé à partir des prêts et réservations.',
+  })
+  @IsOptional()
   @IsInt()
   @Min(0)
-  availableCopies: number;
+  availableCopies?: number;
 
   @ApiProperty({ example: 'Roman historique et social.', required: false })
   @IsOptional()

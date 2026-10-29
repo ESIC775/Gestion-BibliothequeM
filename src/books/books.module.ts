@@ -8,10 +8,13 @@ import { Category } from '../categories/models/category.model';
 import { Author } from '../authors/models/author.model';
 import { Loan } from '../loans/models/loan.model';
 import { User } from '../users/models/user.model';
+import { Reservation } from '../reservations/models/reservation.model';
+import { CirculationModule } from '../circulation/circulation.module';
 
 @Module({
   imports: [
-    SequelizeModule.forFeature([Book, BookAuthor, Category, Author, Loan, User]),
+    SequelizeModule.forFeature([Book, BookAuthor, Category, Author, Loan, User, Reservation]),
+    CirculationModule,
   ],
   controllers: [BooksController],
   providers: [BooksService],
