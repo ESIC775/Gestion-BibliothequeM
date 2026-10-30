@@ -968,3 +968,21 @@
   cursor: pointer;
   text-decoration: underline;
 }
+
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.btn-action.edit { color: var(--primary); border-color: #bfdbfe; background: #eff6ff; }
+.btn-action.edit:hover { background: #dbeafe; }
+.btn-action.delete { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
+.btn-action.delete:hover { background: #fee2e2; }
+.book-actions { flex-wrap: wrap; }

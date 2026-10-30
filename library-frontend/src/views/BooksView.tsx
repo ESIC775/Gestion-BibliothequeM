@@ -95,7 +95,7 @@ const BooksView = ({
   };
 
   const handleDelete = async (id: number) => {
-    if (confirm("Supprimer ce livre ?")) {
+    if (confirm("Supprimer définitivement ce livre de la bibliothèque et de la base de données ?")) {
       try {
         await api.delete(`/books/${id}`);
         onRefresh();
@@ -252,18 +252,18 @@ const BooksView = ({
                   {isAdmin && (
                     <>
                       <button
-                        className="btn-icon edit"
+                        className="btn-action edit"
                         onClick={() => handleEdit(book)}
-                        title="Modifier"
+                        title="Modifier ce livre"
                       >
-                        <Edit size={16} />
+                        <Edit size={15} /> Modifier
                       </button>
                       <button
-                        className="btn-icon delete"
+                        className="btn-action delete"
                         onClick={() => handleDelete(book.id)}
-                        title="Supprimer"
+                        title="Supprimer ce livre"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={15} /> Supprimer
                       </button>
                     </>
                   )}
