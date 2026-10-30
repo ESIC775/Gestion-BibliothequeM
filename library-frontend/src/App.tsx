@@ -214,7 +214,7 @@ function App() {
         <div className="sidebar-header">
           <div className="logo-container">
             <Library className="logo-icon" />
-            <h1>Gestion de Bibliothèque</h1>
+            <h1>BOOKIN</h1>
           </div>
         </div>
 
