@@ -1,4 +1,4 @@
-# Application Full-Stack de Gestion de Bibliothèque — SAE DDAW
+# BOOKIN — Application Full-Stack de Gestion de Bibliothèque — SAE DDAW
 
 Ce projet est une application complète (Frontend et Backend) conçue pour répondre aux critères de la SAE « Développement & Déploiement d’une Application Web RESTful Conteneurisée ». Il permet la gestion centralisée d'une bibliothèque : adhérents, livres, emprunts, auteurs, membres, etc.
 

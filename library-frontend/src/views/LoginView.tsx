@@ -62,7 +62,7 @@ const LoginView = ({ onLogin }: LoginViewProps) => {
       >
         <div className="login-header">
           <Library className="logo-icon" size={48} />
-          <h1>Gestion de Bibliothèque</h1>
+          <h1>BOOKIN</h1>
           <p>
             {mode === "login"
               ? "Connectez-vous pour accéder à la bibliothèque"
