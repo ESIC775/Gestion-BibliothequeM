@@ -1,4 +1,4 @@
 {
-  "extends": "./tsconfig.json",
+  "xtends": "./tsconfig.json",
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts", "export-openapi.ts", "library-frontend"]
 }
