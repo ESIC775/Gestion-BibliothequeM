@@ -1,5 +1,5 @@
 {
-  "compilerOptions": {
+  "ompilerOptions": {
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
