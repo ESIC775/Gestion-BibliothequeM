@@ -1,5 +1,5 @@
 {
-  "name": "library-api",
+  /*"name": "library-api"*/,
   "version": "1.0.0",
   "description": "API RESTful conteneurisée de gestion de bibliothèque avec NestJS, Sequelize et PostgreSQL",
   "private": true,
