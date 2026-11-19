@@ -1,4 +1,4 @@
-impo rt React from 'react';
+import React from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
