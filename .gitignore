@@ -1,4 +1,4 @@
-node_modules/
+n ode_modules/
 dist/
 coverage/
 .env
