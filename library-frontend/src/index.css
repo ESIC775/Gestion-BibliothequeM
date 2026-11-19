@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --primary: #2563eb;
+    --primary: #2563eb;
   --primary-hover: #1d4ed8;
   --bg: #f8fafc;
   --card-bg: #ffffff;
