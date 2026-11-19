@@ -71,5 +71,9 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "allowScripts": {
+    "bcrypt@6.0.0": true,
+    "sqlite3@5.1.7": true
   }
 }
