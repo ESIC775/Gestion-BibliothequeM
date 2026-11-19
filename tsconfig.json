@@ -16,5 +16,5 @@
     "noImplicitAny": false,
     "strictPropertyInitialization": false
   },
-  "exclude": ["node_modules", "dist", "library-frontend"]
+  "exclude": ["node_module", "dist", "library-frontend"]
 }
