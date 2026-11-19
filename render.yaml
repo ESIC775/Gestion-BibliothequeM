@@ -1,6 +1,6 @@
 services:
   # Base de données MySQL (Service Privé)
-  - type: pservice
+  - type: pservices
     name: library-db
     env: docker
     plan: starter
